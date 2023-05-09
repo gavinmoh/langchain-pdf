@@ -1,6 +1,8 @@
 ### Summary
 This is a simple example of a Q&A app build with langchain and streamlit, powered by GPT-3. It takes a PDF file as an input and answers questions about it.
 
+![screenshot](./screenshot.png)
+
 ### How to install
 1. Clone this repo
 2. Make sure you have `pipenv` installed.
