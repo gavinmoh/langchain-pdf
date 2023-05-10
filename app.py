@@ -42,12 +42,15 @@ def main():
         # check if we have the index in cache
         # if not, create it
         try:
-            index = FAISS.load_local("index_cache/" + file_hash)
+            index = FAISS.load_local("index_cache/" + file_hash, embeddings)
+            print("Index loaded from cache")
         except:
             text = extract_text_from_pdf(pdf)
             chunks = split_text_into_chunks(text)
             index = FAISS.from_texts(chunks, embeddings)
+            print("Index created")
             index.save_local("index_cache/" + file_hash)
+            print("Index saved to cache")
 
         # show user input
         user_question = st.text_input("Ask a question about your PDF:")
