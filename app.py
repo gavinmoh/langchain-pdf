@@ -42,12 +42,16 @@ def main():
         # check if we have the index in cache
         # if not, create it
         try:
-            index = FAISS.load_local("index_cache/" + file_hash, embeddings)
+            with st.spinner("Trying to load index from cache..."):
+                index = FAISS.load_local("index_cache/" + file_hash, embeddings)
+            st.success("Index loaded from cache.", icon="✅")
             print("Index loaded from cache")
         except:
-            text = extract_text_from_pdf(pdf)
-            chunks = split_text_into_chunks(text)
-            index = FAISS.from_texts(chunks, embeddings)
+            with st.spinner("Creating index..."):
+                text = extract_text_from_pdf(pdf)
+                chunks = split_text_into_chunks(text)
+                index = FAISS.from_texts(chunks, embeddings)
+            st.success("Index created.", icon="✅")
             print("Index created")
             index.save_local("index_cache/" + file_hash)
             print("Index saved to cache")
