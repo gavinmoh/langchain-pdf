@@ -17,4 +17,4 @@ This is a simple example of a Q&A app build with langchain and streamlit, powere
 3. Wait for the answer.
 
 ### Gotchas 
-- The embeddings are not stored or cache, each time a PDF is uploaded, the embeddings are generated again. 
+- The embeddings will be created and cached when you first upload a new PDF file, creating the embeddings will consume the tokens from your OpenAI API key depending on the size of the text content in the PDF file.
