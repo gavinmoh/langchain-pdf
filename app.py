@@ -7,6 +7,8 @@ from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
+from langchain.memory import ConversationBufferMemory
+from langchain.chains import ConversationalRetrievalChain
 from file_hash import sha256sum
 
 def split_text_into_chunks(text, chunk_size=1000, chunk_overlap=200):
@@ -29,7 +31,7 @@ def extract_text_from_pdf(pdf):
 def main():
     load_dotenv()
     st.set_page_config(page_title='Ask your PDF')
-    st.header("Ask your PDF 💬")
+    st.header("Ask your PDF 📖")
 
     # upload the file
     pdf = st.file_uploader("Upload your PDF file", type=["pdf"])
@@ -56,18 +58,37 @@ def main():
             index.save_local("index_cache/" + file_hash)
             print("Index saved to cache")
 
-        # show user input
-        user_question = st.text_input("Ask a question about your PDF:")
-        if user_question:
-            docs = index.similarity_search(user_question)
+        if "memory" not in st.session_state:
+            st.session_state.memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
 
-            # load the QA chain
-            llm = ChatOpenAI(model="gpt-3.5-turbo")
-            chain = load_qa_chain(llm, chain_type="stuff")
-            with get_openai_callback() as callback:
-                response = chain.run(input_documents=docs, question=user_question)
-                print(callback)
-                st.write(response)
+        if "messages" not in st.session_state:
+            st.session_state.messages = []   
+
+        # show user input
+        query = st.text_input(
+            "Ask me anything",
+            placeholder="Ask me anything from {}".format(pdf.name)
+        )
+
+        if query:
+            with st.spinner("Thinking...🤔"):
+                # load the QA chain
+                chain = ConversationalRetrievalChain.from_llm(
+                    ChatOpenAI(model="gpt-3.5-turbo"), 
+                    index.as_retriever(), 
+                    memory=st.session_state.memory
+                )
+                with get_openai_callback() as callback:
+                    result = chain({"question": query})
+                    print(callback)
+                    st.success(result["answer"], icon="🤖")
+                st.session_state.messages.append("🐵: {}".format(query))
+                st.session_state.messages.append("🤖: {}".format(result["answer"]))
+        
+        with st.expander("Show chat history"):
+            if st.session_state.messages != []:
+                for message in reversed(st.session_state.messages):
+                    st.write(message)    
 
 if __name__ == '__main__':
     main()
