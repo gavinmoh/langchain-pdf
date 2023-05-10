@@ -5,7 +5,7 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
-from langchain.llms import OpenAI
+from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
 
 def main():
@@ -42,7 +42,7 @@ def main():
             docs = knowledge_base.similarity_search(user_question)
 
             # load the QA chain
-            llm = OpenAI()
+            llm = ChatOpenAI(model="gpt-3.5-turbo")
             chain = load_qa_chain(llm, chain_type="stuff")
             with get_openai_callback() as callback:
                 response = chain.run(input_documents=docs, question=user_question)
