@@ -7,6 +7,24 @@ from langchain.vectorstores import FAISS
 from langchain.chains.question_answering import load_qa_chain
 from langchain.chat_models import ChatOpenAI
 from langchain.callbacks import get_openai_callback
+from file_hash import sha256sum
+
+def split_text_into_chunks(text, chunk_size=1000, chunk_overlap=200):
+    text_splitter = CharacterTextSplitter(
+        separator="\n",
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        length_function=len
+    )
+    return text_splitter.split_text(text)
+
+def extract_text_from_pdf(pdf):
+    pdf_reader = PdfReader(pdf)
+    text = ""
+    for page in pdf_reader.pages:
+        text += page.extract_text()
+    return text
+    
 
 def main():
     load_dotenv()
@@ -18,28 +36,23 @@ def main():
 
     # extract the text
     if pdf is not None:
-        pdf_reader = PdfReader(pdf)
-        text = ""
-        for page in pdf_reader.pages:
-            text += page.extract_text()
-
-        # split the text
-        text_splitter = CharacterTextSplitter(
-            separator="\n",
-            chunk_size=1000,
-            chunk_overlap=200,
-            length_function=len
-        )
-        chunks = text_splitter.split_text(text)
-        
-        # create embeddings
+        file_hash = sha256sum(pdf)
         embeddings = OpenAIEmbeddings()
-        knowledge_base = FAISS.from_texts(chunks, embeddings)
+
+        # check if we have the index in cache
+        # if not, create it
+        try:
+            index = FAISS.load_local("index_cache/" + file_hash)
+        except:
+            text = extract_text_from_pdf(pdf)
+            chunks = split_text_into_chunks(text)
+            index = FAISS.from_texts(chunks, embeddings)
+            index.save_local("index_cache/" + file_hash)
 
         # show user input
         user_question = st.text_input("Ask a question about your PDF:")
         if user_question:
-            docs = knowledge_base.similarity_search(user_question)
+            docs = index.similarity_search(user_question)
 
             # load the QA chain
             llm = ChatOpenAI(model="gpt-3.5-turbo")
