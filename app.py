@@ -74,7 +74,7 @@ def main():
             with st.spinner("Thinking...🤔"):
                 # load the QA chain
                 chain = ConversationalRetrievalChain.from_llm(
-                    ChatOpenAI(model="gpt-3.5-turbo"), 
+                    ChatOpenAI(model_name="gpt-3.5-turbo"), 
                     index.as_retriever(), 
                     memory=st.session_state.memory
                 )
